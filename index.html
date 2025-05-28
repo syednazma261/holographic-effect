@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holographic Effect</title>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Add the script here<script>
+  // Scene, Camera, Renderer setup
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Add an object (a cube for this example)
+  const geometry = new THREE.BoxGeometry();
+  const holographicMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 1.0 }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec3 vNormal;
+
+      void main() {
+        float intensity = pow(0.9 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        vec3 glow = vec3(0.0, 1.0, 0.8) * intensity;
+        float scanline = abs(sin(gl_FragCoord.y * 0.1 + time * 5.0)) * 0.3;
+        gl_FragColor = vec4(glow + scanline, 1.0);
+      }
+    `,
+    side: THREE.DoubleSide,
+    transparent: true
+  });
+
+  const cube = new THREE.Mesh(geometry, holographicMaterial);
+  scene.add(cube);
+
+  camera.position.z = 5;
+
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    holographicMaterial.uniforms.time.value += 0.05; // Update time
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+</script>
+  </script>
+</body>
+</html>
